@@ -1,18 +1,30 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FiPlus } from "react-icons/fi";
+import toast from "react-hot-toast";
 import { Cake } from "../types";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import { useAuthModal } from "../context/AuthModalContext";
 
 const CakeCard = ({ cake }: { cake: Cake }) => {
   // Use the first weight option as default, or fallback to "500g"
   const [weight, setWeight] = useState(cake.weightOptions?.[0] || "500g");
   const { addToCart } = useCart();
+  const { firebaseUser } = useAuth();
+  const { openAuthModal } = useAuthModal();
 
   // Directly look up the price using the selected weight key from priceOptions
   const displayPrice = cake.priceOptions?.[weight] ?? cake.price;
 
   const handleAddToCart = () => {
+    // Ordering requires an account — nudge logged-out visitors to sign in
+    // with Google instead of silently adding to a cart they can't check out.
+    if (!firebaseUser) {
+      toast.error("Please login to add cakes to your cart");
+      openAuthModal();
+      return;
+    }
     addToCart({ ...cake, price: displayPrice }, weight);
   };
 

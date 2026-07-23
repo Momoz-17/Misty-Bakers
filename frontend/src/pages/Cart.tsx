@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiTrash2, FiMinus, FiPlus } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useAuthModal } from "../context/AuthModalContext";
 import { useApi } from "../hooks/useApi";
 
 const Cart = () => {
   const { items, removeFromCart, updateQuantity, clearCart, total } = useCart();
   const { firebaseUser } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const { request } = useApi();
   const navigate = useNavigate();
 
@@ -18,13 +20,20 @@ const Cart = () => {
   const [date, setDate] = useState("");
   const [placing, setPlacing] = useState(false);
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (e: FormEvent) => {
+    e.preventDefault();
+
     if (!firebaseUser) {
       toast.error("Please login to place an order");
+      openAuthModal();
       return;
     }
-    if (!address || !phone || !date) {
-      toast.error("Please fill delivery address, phone and date");
+    if (!address.trim() || !phone.trim() || !date) {
+      toast.error("Please fill in address, phone and delivery date");
+      return;
+    }
+    if (!/^\d{10}$/.test(phone.trim())) {
+      toast.error("Please enter a valid 10-digit phone number");
       return;
     }
     setPlacing(true);
@@ -130,46 +139,70 @@ const Cart = () => {
 
         <div className="bg-white rounded-2xl p-6 shadow-sm h-fit sticky top-24">
           <h3 className="font-display font-semibold text-lg text-cocoa mb-4">Delivery Details</h3>
-          <div className="space-y-3 mb-5">
-            <input
-              type="text"
-              placeholder="Delivery address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full border border-blush-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blush-300"
-            />
-            <input
-              type="tel"
-              placeholder="Contact phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-blush-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blush-300"
-            />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-blush-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blush-300"
-            />
-          </div>
+          <form onSubmit={handlePlaceOrder}>
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="text-xs font-semibold text-cocoa/60 mb-1 block">
+                  Delivery Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Full delivery address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full border border-blush-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blush-300"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-cocoa/60 mb-1 block">
+                  Contact Phone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  title="Enter a 10-digit phone number"
+                  placeholder="10-digit phone number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full border border-blush-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blush-300"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-cocoa/60 mb-1 block">
+                  Delivery Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  type="date"
+                  min={new Date().toISOString().split("T")[0]}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full border border-blush-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blush-300"
+                />
+              </div>
+            </div>
 
-          <div className="flex justify-between text-sm text-cocoa/60 mb-2">
-            <span>Subtotal</span>
-            <span>₹{total}</span>
-          </div>
-          <div className="flex justify-between font-semibold text-cocoa text-lg mb-6">
-            <span>Total</span>
-            <span>₹{total}</span>
-          </div>
+            <div className="flex justify-between text-sm text-cocoa/60 mb-2">
+              <span>Subtotal</span>
+              <span>₹{total}</span>
+            </div>
+            <div className="flex justify-between font-semibold text-cocoa text-lg mb-6">
+              <span>Total</span>
+              <span>₹{total}</span>
+            </div>
 
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handlePlaceOrder}
-            disabled={placing}
-            className="w-full bg-blush-500 text-white py-3 rounded-full font-semibold hover:bg-blush-600 disabled:opacity-60 transition-colors"
-          >
-            {placing ? "Placing order..." : "Place Order"}
-          </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              type="submit"
+              disabled={placing}
+              className="w-full bg-blush-500 text-white py-3 rounded-full font-semibold hover:bg-blush-600 disabled:opacity-60 transition-colors"
+            >
+              {placing ? "Placing order..." : "Place Order"}
+            </motion.button>
+          </form>
         </div>
       </div>
     </div>

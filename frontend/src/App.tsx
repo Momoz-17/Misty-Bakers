@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import AuthModal from "./components/AuthModal";
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
 import About from "./pages/About";
@@ -18,8 +19,9 @@ import ScrollToTop from "./components/ScrollToTop";
 function App() {
   return (
     <div className="min-h-screen flex flex-col bg-cream">
-      <ScrollToTop />
       <Toaster position="top-center" toastOptions={{ style: { fontFamily: "Poppins, sans-serif" } }} />
+      <ScrollToTop />
+      <AuthModal />
       <Navbar />
       <main className="flex-1">
         <Routes>
